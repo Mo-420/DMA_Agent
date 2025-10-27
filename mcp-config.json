@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "google-drive": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-google-drive"],
+      "env": {
+        "GOOGLE_DRIVE_API_KEY": "${GOOGLE_DRIVE_API_KEY}",
+        "GOOGLE_DRIVE_CLIENT_ID": "${GOOGLE_DRIVE_CLIENT_ID}",
+        "GOOGLE_DRIVE_CLIENT_SECRET": "${GOOGLE_DRIVE_CLIENT_SECRET}"
+      }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "/Users/mo/DMA_Agent/documents"],
+      "env": {}
+    }
+  }
+}
+

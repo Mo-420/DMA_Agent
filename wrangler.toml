@@ -1,0 +1,15 @@
+name = "dma-agent"
+main = "server/index.js"
+compatibility_date = "2024-10-27"
+
+[env.production]
+routes = [
+  { pattern = "api.dmayachting.com", zone_name = "dmayachting.com" }
+]
+
+[build]
+command = "npm install"
+
+[[routes]]
+pattern = "*.dmayachting.com/api/*"
+zone_name = "dmayachting.com"

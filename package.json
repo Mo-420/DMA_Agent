@@ -1,0 +1,45 @@
+{
+  "name": "dma-agent",
+  "version": "1.0.0",
+  "description": "AI Agent for DMA document management and yacht availability",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "PORT=${PORT:-3004} nodemon server/index.js",
+    "build": "npm run build:client",
+    "build:client": "cd client && npm run build",
+    "install:all": "npm install && cd client && npm install",
+    "test:discord-quality": "node tests/discord-bot-quality.test.js"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "dma",
+    "yacht",
+    "document-management"
+  ],
+  "author": "DMA Team",
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/builders": "^1.13.0",
+    "@discordjs/rest": "^2.6.0",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "discord.js": "^14.24.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "googleapis": "^164.1.0",
+    "mammoth": "^1.6.0",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "openai": "^4.20.1",
+    "pdf-parse": "^1.1.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^6.3.4"
+  }
+}
