@@ -18,7 +18,7 @@ const openai = new OpenAI({
  *   data,           // Data to process (can be string, object, array, etc.)
  *   callbackUrl,    // URL to call back with results
  *   callId,         // Optional custom call ID
- *   model,          // Optional OpenAI model (default: gpt-4o)
+ *   model,          // Optional OpenAI model (default: gpt-5)
  *   options         // Optional OpenAI options
  * }
  */
@@ -29,7 +29,7 @@ router.post('/process', async (req, res) => {
       data,
       callbackUrl,
       callId,
-      model = 'gpt-4o',
+      model = 'gpt-5',
       options = {}
     } = req.body;
     
