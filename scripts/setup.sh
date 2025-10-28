@@ -59,3 +59,4 @@ echo "- Backend: http://localhost:3000"
 echo "- Frontend: http://localhost:3001"
 
 
+

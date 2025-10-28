@@ -10,13 +10,17 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Your custom DMA Manual GPT Assistant ID
-const DMA_ASSISTANT_ID = process.env.CUSTOM_GPT_ASSISTANT_ID || 'asst_cIa617hpcjmQIQKiqYsaZIZH';
-
 /**
  * POST /api/openai-processor/process
  * Process data with OpenAI based on instructions and callback with results
- * Uses your custom DMA Manual GPT instead of regular GPT
+ * Body: { 
+ *   instructions,    // System prompt/instructions for OpenAI
+ *   data,           // Data to process (can be string, object, array, etc.)
+ *   callbackUrl,    // URL to call back with results
+ *   callId,         // Optional custom call ID
+ *   model,          // Optional OpenAI model (default: gpt-4o)
+ *   options         // Optional OpenAI options
+ * }
  */
 router.post('/process', async (req, res) => {
   try {
@@ -25,7 +29,7 @@ router.post('/process', async (req, res) => {
       data,
       callbackUrl,
       callId,
-      model = 'dma-manual-gpt', // Default to your custom GPT
+      model = 'gpt-4o',
       options = {}
     } = req.body;
     
@@ -49,7 +53,7 @@ router.post('/process', async (req, res) => {
       status: 'processing'
     });
 
-    console.log(`🤖 Processing request ${finalCallId} with DMA Manual GPT`);
+    console.log(`🤖 Processing OpenAI request ${finalCallId} with model ${model}`);
 
     // Process OpenAI request asynchronously
     processOpenAIRequest(finalCallId);
@@ -57,7 +61,7 @@ router.post('/process', async (req, res) => {
     res.json({
       callId: finalCallId,
       status: 'processing',
-      message: 'Request submitted for DMA Manual GPT processing'
+      message: 'Request submitted for OpenAI processing'
     });
 
   } catch (error) {
@@ -67,7 +71,7 @@ router.post('/process', async (req, res) => {
 });
 
 /**
- * Process OpenAI request using your custom DMA Manual GPT
+ * Process OpenAI request and send callback
  */
 async function processOpenAIRequest(callId) {
   try {
@@ -79,84 +83,75 @@ async function processOpenAIRequest(callId) {
 
     const { instructions, data, callbackUrl, model, options } = request;
     
-    console.log(`🔄 Calling DMA Manual GPT for request ${callId}...`);
-    
-    // Use Assistants API with your custom GPT
-    const assistant = await openai.beta.assistants.retrieve(DMA_ASSISTANT_ID);
-    
-    // Create a thread
-    const thread = await openai.beta.threads.create();
-    
-    // Prepare the message content
-    const messageContent = `Instructions: ${instructions}\n\nData to process: ${typeof data === 'string' ? data : JSON.stringify(data, null, 2)}`;
-    
-    // Add message to thread
-    await openai.beta.threads.messages.create(thread.id, {
-      role: 'user',
-      content: messageContent
-    });
-    
-    // Run the assistant
-    const run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: DMA_ASSISTANT_ID
-    });
-    
-    // Wait for completion
-    let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    while (runStatus.status !== 'completed') {
-      if (runStatus.status === 'failed') {
-        throw new Error(`Assistant run failed: ${runStatus.last_error?.message || 'Unknown error'}`);
+    // Prepare messages for OpenAI
+    const messages = [
+      {
+        role: 'system',
+        content: instructions
+      },
+      {
+        role: 'user',
+        content: typeof data === 'string' ? data : JSON.stringify(data, null, 2)
       }
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    }
+    ];
     
-    // Get messages
-    const messages = await openai.beta.threads.messages.list(thread.id);
-    const response = messages.data[0].content[0].text.value;
+    // Default options
+    const defaultOptions = {
+      temperature: 0.7,
+      max_tokens: 1000,
+      presence_penalty: 0,
+      frequency_penalty: 0
+    };
+    
+    const finalOptions = { ...defaultOptions, ...options };
 
-    const result = {
+    console.log(`🔄 Calling OpenAI API for request ${callId}...`);
+    
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model,
+      messages,
+      ...finalOptions
+    });
+
+    const response = {
       callId,
       status: 'success',
-      response: response.trim(),
-      model: 'dma-manual-gpt',
-      assistantId: DMA_ASSISTANT_ID,
+      response: completion.choices[0].message.content,
+      usage: completion.usage,
+      finishReason: completion.choices[0].finish_reason,
       processedAt: Date.now(),
       processingTime: Date.now() - request.createdAt,
+      model,
       instructions,
-      originalData: data,
-      usage: {
-        // Assistants API doesn't provide detailed usage stats
-        model: 'dma-manual-gpt',
-        assistant_id: DMA_ASSISTANT_ID
-      }
+      originalData: data
     };
 
-    console.log(`✅ DMA Manual GPT request ${callId} completed successfully`);
+    console.log(`✅ OpenAI request ${callId} completed successfully`);
 
     // Send callback to WordPress
-    await sendCallback(callbackUrl, result);
+    await sendCallback(callbackUrl, response);
 
     // Clean up
     pendingRequests.delete(callId);
 
   } catch (error) {
-    console.error(`❌ DMA Manual GPT request ${callId} failed:`, error.message);
+    console.error(`❌ OpenAI request ${callId} failed:`, error.message);
     
-    const errorResult = {
+    const errorResponse = {
       callId,
       status: 'error',
       error: error.message,
       errorType: error.constructor.name,
       processedAt: Date.now(),
       processingTime: Date.now() - (pendingRequests.get(callId)?.createdAt || Date.now()),
-      model: 'dma-manual-gpt',
+      model: request.model,
       instructions: request.instructions,
       originalData: request.data
     };
 
     // Send error callback
-    await sendCallback(request.callbackUrl, errorResult);
+    await sendCallback(request.callbackUrl, errorResponse);
     
     // Clean up
     pendingRequests.delete(callId);
@@ -176,7 +171,7 @@ async function sendCallback(callbackUrl, response) {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'DMA-Manual-GPT-Processor/1.0'
+        'User-Agent': 'DMA-OpenAI-Processor/1.0'
       }
     });
 
