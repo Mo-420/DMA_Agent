@@ -57,3 +57,15 @@ module.exports = app;
 
 
 
+
+// Callback API routes
+app.use('/api/callback', require('./routes/callback'));
+
+
+// OpenAI Callback API routes
+app.use('/api/openai-callback', require('./routes/openai-callback'));
+
+
+// OpenAI Processor API routes
+app.use('/api/openai-processor', require('./routes/openai-processor'));
+

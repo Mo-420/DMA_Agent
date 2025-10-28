@@ -1,0 +1,52 @@
+#!/usr/bin/expect -f
+set timeout 300
+set password "weQh4Cff8sHEU?y2i1K8FWMMWy1syz/StGMItGYZBW70paHY3Q3SudTOE"
+
+spawn ssh -o StrictHostKeyChecking=no root@78.46.232.79
+
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "Permission denied" {
+        puts "Authentication failed"
+        exit 1
+    }
+    "#" {
+        puts "Connected successfully"
+    }
+}
+
+expect "# "
+
+# Update system
+send "apt-get update -y\r"
+expect "# "
+
+# Install Node.js 18
+send "curl -fsSL https://deb.nodesource.com/setup_18.x | bash -\r"
+expect "# "
+
+send "apt-get install -y nodejs\r"
+expect "# "
+
+# Install PM2
+send "npm install -g pm2\r"
+expect "# "
+
+# Clone repo
+send "git clone https://github.com/Mo-420/DMA_Agent.git\r"
+expect "# "
+
+send "cd DMA_Agent && npm install\r"
+expect "# "
+
+send "cp env.example .env\r"
+expect "# "
+
+send "echo '✓ Deployment complete!'\r"
+expect "# "
+
+send "exit\r"
+expect eof

@@ -1,0 +1,30 @@
+# COPY ALL OF THIS AND PASTE INTO YOUR SSH SESSION
+
+# Step 1: Update system
+apt-get update -y
+
+# Step 2: Install Node.js 18
+curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+apt-get install -y nodejs
+
+# Step 3: Install PM2
+npm install -g pm2
+
+# Step 4: Clone your repo
+git clone https://github.com/Mo-420/DMA_Agent.git
+cd DMA_Agent
+
+# Step 5: Install dependencies
+npm install
+
+# Step 6: Copy environment file
+cp env.example .env
+
+# Step 7: Check what we have
+echo "✓ Deployment complete! Now edit .env with:"
+echo "nano .env"
+echo ""
+echo "Then start bot with:"
+echo "pm2 start server/index.js --name dma-bot"
+echo "pm2 save"
+echo "pm2 startup"
